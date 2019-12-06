@@ -63,6 +63,19 @@ import org.apache.rocketmq.store.index.QueryOffsetResult;
 import org.apache.rocketmq.store.schedule.ScheduleMessageService;
 import org.apache.rocketmq.store.stats.BrokerStatsManager;
 
+import java.io.File;
+import java.io.IOException;
+import java.io.RandomAccessFile;
+import java.net.Inet6Address;
+import java.net.InetSocketAddress;
+import java.net.SocketAddress;
+import java.nio.ByteBuffer;
+import java.nio.channels.FileLock;
+import java.util.*;
+import java.util.Map.Entry;
+import java.util.concurrent.*;
+import java.util.concurrent.atomic.AtomicLong;
+
 public class DefaultMessageStore implements MessageStore {
     private static final InternalLogger log = InternalLoggerFactory.getLogger(LoggerName.STORE_LOGGER_NAME);
 
@@ -559,6 +572,7 @@ public class DefaultMessageStore implements MessageStore {
             return null;
         }
 
+        // 不可读
         if (!this.runningFlags.isReadable()) {
             log.warn("message store is not readable, so getMessage is forbidden " + this.runningFlags.getFlagBits());
             return null;
@@ -574,12 +588,13 @@ public class DefaultMessageStore implements MessageStore {
         GetMessageResult getResult = new GetMessageResult();
 
         final long maxOffsetPy = this.commitLog.getMaxOffset();
-
+        // 消费队列
         ConsumeQueue consumeQueue = findConsumeQueue(topic, queueId);
         if (consumeQueue != null) {
             minOffset = consumeQueue.getMinOffsetInQueue();
             maxOffset = consumeQueue.getMaxOffsetInQueue();
 
+            // 没有消息
             if (maxOffset == 0) {
                 status = GetMessageStatus.NO_MESSAGE_IN_QUEUE;
                 nextBeginOffset = nextOffsetCorrection(offset, 0);
@@ -596,7 +611,9 @@ public class DefaultMessageStore implements MessageStore {
                 } else {
                     nextBeginOffset = nextOffsetCorrection(offset, maxOffset);
                 }
-            } else {
+            }
+            // maxOffset不等于0 && offSet大于minOffset && offSet小于maxOffset
+            else {
                 SelectMappedBufferResult bufferConsumeQueue = consumeQueue.getIndexBuffer(offset);
                 if (bufferConsumeQueue != null) {
                     try {
@@ -699,6 +716,7 @@ public class DefaultMessageStore implements MessageStore {
                 }
             }
         } else {
+            // 没有对应的队列
             status = GetMessageStatus.NO_MATCHED_LOGIC_QUEUE;
             nextBeginOffset = nextOffsetCorrection(offset, 0);
         }
@@ -709,6 +727,7 @@ public class DefaultMessageStore implements MessageStore {
             this.storeStatsService.getGetMessageTimesTotalMiss().incrementAndGet();
         }
         long elapsedTime = this.getSystemClock().now() - beginTime;
+        // 记录获取message的最大时间
         this.storeStatsService.setGetMessageEntireTimeMax(elapsedTime);
 
         getResult.setStatus(status);
@@ -1198,6 +1217,9 @@ public class DefaultMessageStore implements MessageStore {
         return null;
     }
 
+    /**
+     *  根据topic和queueId 定位到消费队列
+     */
     public ConsumeQueue findConsumeQueue(String topic, int queueId) {
         ConcurrentMap<Integer, ConsumeQueue> map = consumeQueueTable.get(topic);
         if (null == map) {
@@ -1231,6 +1253,7 @@ public class DefaultMessageStore implements MessageStore {
 
     private long nextOffsetCorrection(long oldOffset, long newOffset) {
         long nextOffset = oldOffset;
+        // broker的角色不是是slave || 配置了isOffsetCheckInSlave
         if (this.getMessageStoreConfig().getBrokerRole() != BrokerRole.SLAVE || this.getMessageStoreConfig().isOffsetCheckInSlave()) {
             nextOffset = newOffset;
         }

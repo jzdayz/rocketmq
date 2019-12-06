@@ -111,11 +111,14 @@ public class BrokerStartup {
             final NettyServerConfig nettyServerConfig = new NettyServerConfig();
             final NettyClientConfig nettyClientConfig = new NettyClientConfig();
 
+            // tls 加密
             nettyClientConfig.setUseTLS(Boolean.parseBoolean(System.getProperty(TLS_ENABLE,
                 String.valueOf(TlsSystemConfig.tlsMode == TlsMode.ENFORCING))));
+            // 监听10911端口
             nettyServerConfig.setListenPort(10911);
             final MessageStoreConfig messageStoreConfig = new MessageStoreConfig();
 
+            // 如果角色是slave
             if (BrokerRole.SLAVE == messageStoreConfig.getBrokerRole()) {
                 int ratio = messageStoreConfig.getAccessMessageInMemoryMaxRatio() - 10;
                 messageStoreConfig.setAccessMessageInMemoryMaxRatio(ratio);
@@ -147,6 +150,7 @@ public class BrokerStartup {
                 System.exit(-2);
             }
 
+            // nameServer的地址
             String namesrvAddr = brokerConfig.getNamesrvAddr();
             if (null != namesrvAddr) {
                 try {
@@ -162,12 +166,14 @@ public class BrokerStartup {
                 }
             }
 
+            // 校验和设置brokerId
             switch (messageStoreConfig.getBrokerRole()) {
                 case ASYNC_MASTER:
                 case SYNC_MASTER:
                     brokerConfig.setBrokerId(MixAll.MASTER_ID);
                     break;
                 case SLAVE:
+                    // slave brokerId 必须大于0
                     if (brokerConfig.getBrokerId() <= 0) {
                         System.out.printf("Slave's brokerId must be > 0");
                         System.exit(-3);
@@ -178,10 +184,11 @@ public class BrokerStartup {
                     break;
             }
 
+            // todo DLeger 看起来是一个提交日志的策略
             if (messageStoreConfig.isEnableDLegerCommitLog()) {
                 brokerConfig.setBrokerId(-1);
             }
-
+            // haServer.port = 10912
             messageStoreConfig.setHaListenPort(nettyServerConfig.getListenPort() + 1);
             LoggerContext lc = (LoggerContext) LoggerFactory.getILoggerFactory();
             JoranConfigurator configurator = new JoranConfigurator();

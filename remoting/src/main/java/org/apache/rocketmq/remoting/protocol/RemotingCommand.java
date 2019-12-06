@@ -17,6 +17,13 @@
 package org.apache.rocketmq.remoting.protocol;
 
 import com.alibaba.fastjson.annotation.JSONField;
+import org.apache.rocketmq.logging.InternalLogger;
+import org.apache.rocketmq.logging.InternalLoggerFactory;
+import org.apache.rocketmq.remoting.CommandCustomHeader;
+import org.apache.rocketmq.remoting.annotation.CFNotNull;
+import org.apache.rocketmq.remoting.common.RemotingHelper;
+import org.apache.rocketmq.remoting.exception.RemotingCommandException;
+
 import java.lang.annotation.Annotation;
 import java.lang.reflect.Field;
 import java.lang.reflect.Modifier;
@@ -24,12 +31,6 @@ import java.nio.ByteBuffer;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.concurrent.atomic.AtomicInteger;
-import org.apache.rocketmq.remoting.CommandCustomHeader;
-import org.apache.rocketmq.remoting.annotation.CFNotNull;
-import org.apache.rocketmq.remoting.common.RemotingHelper;
-import org.apache.rocketmq.remoting.exception.RemotingCommandException;
-import org.apache.rocketmq.logging.InternalLogger;
-import org.apache.rocketmq.logging.InternalLoggerFactory;
 
 public class RemotingCommand {
     public static final String SERIALIZE_TYPE_PROPERTY = "rocketmq.serialize.type";
@@ -106,6 +107,9 @@ public class RemotingCommand {
         }
     }
 
+    /**
+     *  创建一个默认失败的 command
+     */
     public static RemotingCommand createResponseCommand(Class<? extends CommandCustomHeader> classHeader) {
         return createResponseCommand(RemotingSysResponseCode.SYSTEM_ERROR, "not set any response code", classHeader);
     }
@@ -142,6 +146,7 @@ public class RemotingCommand {
     }
 
     public static RemotingCommand decode(final ByteBuffer byteBuffer) {
+        // 1个字节ProtocolType+3个字节header+body
         int length = byteBuffer.limit();
         int oriHeaderLen = byteBuffer.getInt();
         int headerLength = getHeaderLength(oriHeaderLen);
@@ -149,8 +154,9 @@ public class RemotingCommand {
         byte[] headerData = new byte[headerLength];
         byteBuffer.get(headerData);
 
-        RemotingCommand cmd = headerDecode(headerData, getProtocolType(oriHeaderLen));
+        RemotingCommand cmd = headerDecode(headerData, /*第一个字节代表protocol*/getProtocolType(oriHeaderLen));
 
+        // 总报文 - 1个字节protocol - 3个字节报文头长度 - 报文头的字节数 = body
         int bodyLength = length - 4 - headerLength;
         byte[] bodyData = null;
         if (bodyLength > 0) {

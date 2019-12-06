@@ -48,6 +48,7 @@ public class ExpressionForRetryMessageFilter extends ExpressionMessageFilter {
 
         boolean isRetryTopic = subscriptionData.getTopic().startsWith(MixAll.RETRY_GROUP_TOPIC_PREFIX);
 
+        // 不是重试的topic && 是tag类型的订阅
         if (!isRetryTopic && ExpressionType.isTagType(subscriptionData.getExpressionType())) {
             return true;
         }
