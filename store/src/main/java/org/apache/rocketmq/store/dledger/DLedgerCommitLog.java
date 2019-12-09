@@ -52,8 +52,14 @@ import org.apache.rocketmq.store.SelectMappedBufferResult;
 import org.apache.rocketmq.store.StoreStatsService;
 import org.apache.rocketmq.store.schedule.ScheduleMessageService;
 
+import java.nio.ByteBuffer;
+import java.util.HashMap;
+import java.util.concurrent.TimeUnit;
+
 /**
  * Store all metadata downtime for recovery, data protection reliability
+ *
+ *  多副本，raft协议的commitLog实现
  */
 public class DLedgerCommitLog extends CommitLog {
     private final DLedgerServer dLedgerServer;

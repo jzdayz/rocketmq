@@ -16,9 +16,10 @@
  */
 package org.apache.rocketmq.store.config;
 
-import java.io.File;
 import org.apache.rocketmq.common.annotation.ImportantField;
 import org.apache.rocketmq.store.ConsumeQueue;
+
+import java.io.File;
 
 public class MessageStoreConfig {
     //The root directory in which the log data is kept
@@ -611,6 +612,8 @@ public class MessageStoreConfig {
     /**
      * Enable transient commitLog store pool only if transientStorePoolEnable is true and the FlushDiskType is
      * ASYNC_FLUSH
+     *
+     *  开启了临时存储并且是异步flush磁盘并且不是slave
      *
      * @return <tt>true</tt> or <tt>false</tt>
      */

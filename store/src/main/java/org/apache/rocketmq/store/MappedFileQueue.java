@@ -16,18 +16,15 @@
  */
 package org.apache.rocketmq.store;
 
-import java.io.File;
-import java.io.IOException;
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.Iterator;
-import java.util.List;
-import java.util.ListIterator;
-import java.util.concurrent.CopyOnWriteArrayList;
 import org.apache.rocketmq.common.UtilAll;
 import org.apache.rocketmq.common.constant.LoggerName;
 import org.apache.rocketmq.logging.InternalLogger;
 import org.apache.rocketmq.logging.InternalLoggerFactory;
+
+import java.io.File;
+import java.io.IOException;
+import java.util.*;
+import java.util.concurrent.CopyOnWriteArrayList;
 
 public class MappedFileQueue {
     private static final InternalLogger log = InternalLoggerFactory.getLogger(LoggerName.STORE_LOGGER_NAME);
@@ -43,6 +40,7 @@ public class MappedFileQueue {
 
     private final AllocateMappedFileService allocateMappedFileService;
 
+    // 记录刷磁盘的offset
     private long flushedWhere = 0;
     private long committedWhere = 0;
 
@@ -195,16 +193,20 @@ public class MappedFileQueue {
         long createOffset = -1;
         MappedFile mappedFileLast = getLastMappedFile();
 
+        // 刚开始，lastMappedFile是空的
         if (mappedFileLast == null) {
             createOffset = startOffset - (startOffset % this.mappedFileSize);
         }
-
+        // 最后一个文件写满了
         if (mappedFileLast != null && mappedFileLast.isFull()) {
+            // 下一个文件的开始的offset
             createOffset = mappedFileLast.getFileFromOffset() + this.mappedFileSize;
         }
 
         if (createOffset != -1 && needCreate) {
+            // 根据offset格式化的文件地址，这个是这次需要的文件
             String nextFilePath = this.storePath + File.separator + UtilAll.offset2FileName(createOffset);
+            // 创建下下次需要用到的文件，这次mappedFileSize用完了，就需要用到下下次需要用到的文件
             String nextNextFilePath = this.storePath + File.separator
                 + UtilAll.offset2FileName(createOffset + this.mappedFileSize);
             MappedFile mappedFile = null;
@@ -214,6 +216,7 @@ public class MappedFileQueue {
                     nextNextFilePath, this.mappedFileSize);
             } else {
                 try {
+                    // 创建
                     mappedFile = new MappedFile(nextFilePath, this.mappedFileSize);
                 } catch (IOException e) {
                     log.error("create mappedFile exception", e);
@@ -222,6 +225,7 @@ public class MappedFileQueue {
 
             if (mappedFile != null) {
                 if (this.mappedFiles.isEmpty()) {
+                    // 如果容器中没有mappedFiles ，那么打个flag在mappedFile
                     mappedFile.setFirstCreateInQueue(true);
                 }
                 this.mappedFiles.add(mappedFile);
@@ -424,6 +428,7 @@ public class MappedFileQueue {
 
     public boolean flush(final int flushLeastPages) {
         boolean result = true;
+
         MappedFile mappedFile = this.findMappedFileByOffset(this.flushedWhere, this.flushedWhere == 0);
         if (mappedFile != null) {
             long tmpTimeStamp = mappedFile.getStoreTimestamp();
@@ -472,18 +477,20 @@ public class MappedFileQueue {
                         this.mappedFileSize,
                         this.mappedFiles.size());
                 } else {
+                    // size 10      10 20  21 30
+                    // 根据offset直接定位到index
                     int index = (int) ((offset / this.mappedFileSize) - (firstMappedFile.getFileFromOffset() / this.mappedFileSize));
                     MappedFile targetFile = null;
                     try {
                         targetFile = this.mappedFiles.get(index);
                     } catch (Exception ignored) {
                     }
-
+                    // 校验直接定位的mappedFile是否满足条件
                     if (targetFile != null && offset >= targetFile.getFileFromOffset()
                         && offset < targetFile.getFileFromOffset() + this.mappedFileSize) {
                         return targetFile;
                     }
-
+                    // 不满足，则从头开始查找满足的mappedFile
                     for (MappedFile tmpMappedFile : this.mappedFiles) {
                         if (offset >= tmpMappedFile.getFileFromOffset()
                             && offset < tmpMappedFile.getFileFromOffset() + this.mappedFileSize) {
