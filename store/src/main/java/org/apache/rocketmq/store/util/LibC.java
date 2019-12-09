@@ -16,11 +16,7 @@
  */
 package org.apache.rocketmq.store.util;
 
-import com.sun.jna.Library;
-import com.sun.jna.Native;
-import com.sun.jna.NativeLong;
-import com.sun.jna.Platform;
-import com.sun.jna.Pointer;
+import com.sun.jna.*;
 
 public interface LibC extends Library {
     LibC INSTANCE = (LibC) Native.loadLibrary(Platform.isWindows() ? "msvcrt" : "c", LibC.class);
@@ -39,10 +35,16 @@ public interface LibC extends Library {
     /* synchronous memory sync */
     int MS_SYNC = 0x0004;
 
+    /**
+     * 锁住指定的内存区域避免被操作系统调到swap空间中
+     */
     int mlock(Pointer var1, NativeLong var2);
 
     int munlock(Pointer var1, NativeLong var2);
 
+    /**
+     * 一次性先将一段数据读入到映射内存区域，这样就减少了缺页异常的产生
+     */
     int madvise(Pointer var1, NativeLong var2, int var3);
 
     Pointer memset(Pointer p, int v, long len);

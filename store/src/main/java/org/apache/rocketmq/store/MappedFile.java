@@ -18,6 +18,16 @@ package org.apache.rocketmq.store;
 
 import com.sun.jna.NativeLong;
 import com.sun.jna.Pointer;
+import org.apache.rocketmq.common.UtilAll;
+import org.apache.rocketmq.common.constant.LoggerName;
+import org.apache.rocketmq.common.message.MessageExt;
+import org.apache.rocketmq.common.message.MessageExtBatch;
+import org.apache.rocketmq.logging.InternalLogger;
+import org.apache.rocketmq.logging.InternalLoggerFactory;
+import org.apache.rocketmq.store.config.FlushDiskType;
+import org.apache.rocketmq.store.util.LibC;
+import sun.nio.ch.DirectBuffer;
+
 import java.io.File;
 import java.io.FileNotFoundException;
 import java.io.IOException;
@@ -31,22 +41,19 @@ import java.security.AccessController;
 import java.security.PrivilegedAction;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.atomic.AtomicLong;
-import org.apache.rocketmq.common.UtilAll;
-import org.apache.rocketmq.common.constant.LoggerName;
-import org.apache.rocketmq.logging.InternalLogger;
-import org.apache.rocketmq.logging.InternalLoggerFactory;
-import org.apache.rocketmq.common.message.MessageExt;
-import org.apache.rocketmq.common.message.MessageExtBatch;
-import org.apache.rocketmq.store.config.FlushDiskType;
-import org.apache.rocketmq.store.util.LibC;
-import sun.nio.ch.DirectBuffer;
 
 public class MappedFile extends ReferenceResource {
     public static final int OS_PAGE_SIZE = 1024 * 4;
     protected static final InternalLogger log = InternalLoggerFactory.getLogger(LoggerName.STORE_LOGGER_NAME);
 
+    /**
+     *  记录目前创建的 mappedFile.length * fileSize 数量
+     */
     private static final AtomicLong TOTAL_MAPPED_VIRTUAL_MEMORY = new AtomicLong(0);
 
+    /**
+     *  记录mappedFiles的数量
+     */
     private static final AtomicInteger TOTAL_MAPPED_FILES = new AtomicInteger(0);
     protected final AtomicInteger wrotePosition = new AtomicInteger(0);
     protected final AtomicInteger committedPosition = new AtomicInteger(0);
@@ -144,6 +151,7 @@ public class MappedFile extends ReferenceResource {
     public void init(final String fileName, final int fileSize,
         final TransientStorePool transientStorePool) throws IOException {
         init(fileName, fileSize);
+        // 尝试去借用缓存池中的buffer
         this.writeBuffer = transientStorePool.borrowBuffer();
         this.transientStorePool = transientStorePool;
     }
@@ -152,12 +160,14 @@ public class MappedFile extends ReferenceResource {
         this.fileName = fileName;
         this.fileSize = fileSize;
         this.file = new File(fileName);
+        // 根据文件名称获取offset
         this.fileFromOffset = Long.parseLong(this.file.getName());
         boolean ok = false;
-
+        // 循环检查创建父级目录
         ensureDirOK(this.file.getParent());
 
         try {
+            // 指定读取的fileChannel
             this.fileChannel = new RandomAccessFile(this.file, "rw").getChannel();
             this.mappedByteBuffer = this.fileChannel.map(MapMode.READ_WRITE, 0, fileSize);
             TOTAL_MAPPED_VIRTUAL_MEMORY.addAndGet(fileSize);
@@ -199,9 +209,10 @@ public class MappedFile extends ReferenceResource {
     public AppendMessageResult appendMessagesInner(final MessageExt messageExt, final AppendMessageCallback cb) {
         assert messageExt != null;
         assert cb != null;
-
+        // 获取当前写入的position
         int currentPos = this.wrotePosition.get();
 
+        // 当前的pos < fileSize  -> 可以追加
         if (currentPos < this.fileSize) {
             ByteBuffer byteBuffer = writeBuffer != null ? writeBuffer.slice() : this.mappedByteBuffer.slice();
             byteBuffer.position(currentPos);
@@ -266,9 +277,11 @@ public class MappedFile extends ReferenceResource {
     }
 
     /**
+     * @param flushLeastPages  至少刷新的页数
      * @return The current flushed position
      */
     public int flush(final int flushLeastPages) {
+        // 可以刷disk
         if (this.isAbleToFlush(flushLeastPages)) {
             if (this.hold()) {
                 int value = getReadPosition();
@@ -327,6 +340,7 @@ public class MappedFile extends ReferenceResource {
                 byteBuffer.position(lastCommittedPosition);
                 byteBuffer.limit(writePos);
                 this.fileChannel.position(lastCommittedPosition);
+                // 将缓存的字节写入文件
                 this.fileChannel.write(byteBuffer);
                 this.committedPosition.set(writePos);
             } catch (Throwable e) {
@@ -339,14 +353,16 @@ public class MappedFile extends ReferenceResource {
         int flush = this.flushedPosition.get();
         int write = getReadPosition();
 
+        // 缓存满了
         if (this.isFull()) {
             return true;
         }
 
+        // 可以刷的页>=至少需要刷的页数
         if (flushLeastPages > 0) {
             return ((write / OS_PAGE_SIZE) - (flush / OS_PAGE_SIZE)) >= flushLeastPages;
         }
-
+        // 可以刷
         return write > flush;
     }
 
@@ -401,6 +417,7 @@ public class MappedFile extends ReferenceResource {
     public SelectMappedBufferResult selectMappedBuffer(int pos) {
         int readPosition = getReadPosition();
         if (pos < readPosition && pos >= 0) {
+            // alive 存活
             if (this.hold()) {
                 ByteBuffer byteBuffer = this.mappedByteBuffer.slice();
                 byteBuffer.position(pos);
@@ -490,8 +507,10 @@ public class MappedFile extends ReferenceResource {
             byteBuffer.put(i, (byte) 0);
             // force flush when flush disk type is sync
             if (type == FlushDiskType.SYNC_FLUSH) {
+                // 如果现在的数据页 >= 指定的数据页
                 if ((i / OS_PAGE_SIZE) - (flush / OS_PAGE_SIZE) >= pages) {
                     flush = i;
+                    // 刷新数据
                     mappedByteBuffer.force();
                 }
             }
