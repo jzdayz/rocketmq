@@ -55,8 +55,17 @@ public class MappedFile extends ReferenceResource {
      *  记录mappedFiles的数量
      */
     private static final AtomicInteger TOTAL_MAPPED_FILES = new AtomicInteger(0);
+    /**
+     * 记录buffer写入的index
+     */
     protected final AtomicInteger wrotePosition = new AtomicInteger(0);
+    /**
+     * 记录将buffer提交到fileChannel的index
+     */
     protected final AtomicInteger committedPosition = new AtomicInteger(0);
+    /**
+     * 记录刷盘的index
+     */
     private final AtomicInteger flushedPosition = new AtomicInteger(0);
     protected int fileSize;
     protected FileChannel fileChannel;
@@ -309,11 +318,14 @@ public class MappedFile extends ReferenceResource {
 
     public int commit(final int commitLeastPages) {
         if (writeBuffer == null) {
+            // 没有写缓存，那么表示所有的直接写入file channel
             //no need to commit data to file channel, so just regard wrotePosition as committedPosition.
             return this.wrotePosition.get();
         }
+        // 可以commit
         if (this.isAbleToCommit(commitLeastPages)) {
             if (this.hold()) {
+                // doCommit
                 commit0(commitLeastPages);
                 this.release();
             } else {
@@ -367,17 +379,19 @@ public class MappedFile extends ReferenceResource {
     }
 
     protected boolean isAbleToCommit(final int commitLeastPages) {
+        // 刷新的index
         int flush = this.committedPosition.get();
+        // 写入的index
         int write = this.wrotePosition.get();
-
+        // mappedFile 已经满了
         if (this.isFull()) {
             return true;
         }
-
         if (commitLeastPages > 0) {
+            // 内存中的页>=至少需要提交的页大小
             return ((write / OS_PAGE_SIZE) - (flush / OS_PAGE_SIZE)) >= commitLeastPages;
         }
-
+        // 只要内存中有可以commit的数据
         return write > flush;
     }
 

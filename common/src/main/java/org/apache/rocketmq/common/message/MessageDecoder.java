@@ -36,7 +36,9 @@ public class MessageDecoder {
     public final static int MESSAGE_PHYSIC_OFFSET_POSTION = 28;
     //    public final static int MESSAGE_STORE_TIMESTAMP_POSTION = 56;
     public final static int MESSAGE_MAGIC_CODE = -626843481;
+    // '\u0001' 1
     public static final char NAME_VALUE_SEPARATOR = 1;
+    // '\u0002'
     public static final char PROPERTY_SEPARATOR = 2;
     public static final int PHY_POS_POSITION = 4 + 4 + 4 + 4 + 4 + 8;
     public static final int SYSFLAG_POSITION = 4 + 4 + 4 + 4 + 4 + 8 + 8;
@@ -422,7 +424,7 @@ public class MessageDecoder {
     }
 
     /**
-     *  kOne1vOne2kTwo1vTwo -> map( "kOne":"vOne","kTwo":"vTwo" )
+     *  kOne1vOne kTwo1vTwo -> map( "kOne":"vOne","kTwo":"vTwo" )
      */
     public static Map<String, String> string2messageProperties(final String properties) {
         Map<String, String> map = new HashMap<String, String>();
