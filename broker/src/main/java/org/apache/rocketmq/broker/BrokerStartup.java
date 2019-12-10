@@ -55,10 +55,18 @@ public class BrokerStartup {
     public static InternalLogger log;
 
     public static void main(String[] args) {
+
+        System.setProperty(MixAll.ROCKETMQ_HOME_PROPERTY,"/Users/jzdayz/Documents/rocketmq-all-4.6.0-bin-release");
+        System.setProperty(MixAll.NAMESRV_ADDR_PROPERTY,"localhost:9876");
+
+
         start(createBrokerController(args));
     }
 
+
     public static BrokerController start(BrokerController controller) {
+
+
         try {
 
             controller.start();
@@ -184,7 +192,7 @@ public class BrokerStartup {
                     break;
             }
 
-            // todo DLeger 看起来是一个提交日志的策略
+            // DLeger raft commit log
             if (messageStoreConfig.isEnableDLegerCommitLog()) {
                 brokerConfig.setBrokerId(-1);
             }

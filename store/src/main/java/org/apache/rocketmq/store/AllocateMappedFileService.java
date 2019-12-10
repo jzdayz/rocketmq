@@ -162,6 +162,7 @@ public class AllocateMappedFileService extends ServiceThread {
         try {
             // 队列中取出
             req = this.requestQueue.take();
+            System.out.println(1);
             AllocateRequest expectedRequest = this.requestTable.get(req.getFilePath());
             // 被remove了
             if (null == expectedRequest) {
