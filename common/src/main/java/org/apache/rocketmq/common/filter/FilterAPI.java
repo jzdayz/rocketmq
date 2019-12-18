@@ -16,8 +16,9 @@
  */
 package org.apache.rocketmq.common.filter;
 
-import java.net.URL;
 import org.apache.rocketmq.common.protocol.heartbeat.SubscriptionData;
+
+import java.net.URL;
 
 public class FilterAPI {
     public static URL classFile(final String className) {
@@ -42,9 +43,11 @@ public class FilterAPI {
         subscriptionData.setTopic(topic);
         subscriptionData.setSubString(subString);
 
+        // 订阅全部
         if (null == subString || subString.equals(SubscriptionData.SUB_ALL) || subString.length() == 0) {
             subscriptionData.setSubString(SubscriptionData.SUB_ALL);
         } else {
+            // 多tag用 || 分开
             String[] tags = subString.split("\\|\\|");
             if (tags.length > 0) {
                 for (String tag : tags) {
