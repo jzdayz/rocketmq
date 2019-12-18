@@ -16,11 +16,14 @@
  */
 package org.apache.rocketmq.client.consumer;
 
-import java.util.List;
 import org.apache.rocketmq.common.message.MessageQueue;
+
+import java.util.List;
 
 /**
  * Strategy Algorithm for message allocating between consumers
+ *
+ *  使用者之前的消费策略
  */
 public interface AllocateMessageQueueStrategy {
 
