@@ -127,25 +127,27 @@ public class MQClientInstance {
         this.nettyClientConfig.setUseTLS(clientConfig.isUseTLS());
         // 与MQ服务器通信的客户端处理器
         this.clientRemotingProcessor = new ClientRemotingProcessor(this);
-
+        // 初始化MQ的客户端的处理
         this.mQClientAPIImpl = new MQClientAPIImpl(this.nettyClientConfig, this.clientRemotingProcessor, rpcHook, clientConfig);
-
+        // 社会组nameServer
         if (this.clientConfig.getNamesrvAddr() != null) {
             this.mQClientAPIImpl.updateNameServerAddressList(this.clientConfig.getNamesrvAddr());
             log.info("user specified name server address: {}", this.clientConfig.getNamesrvAddr());
         }
-
+        // 客户端ID org.apache.rocketmq.client.ClientConfig.buildMQClientId
         this.clientId = clientId;
 
         this.mQAdminImpl = new MQAdminImpl(this);
 
         this.pullMessageService = new PullMessageService(this);
 
+        // 重新平衡订阅，去掉已经删除的topic
         this.rebalanceService = new RebalanceService(this);
 
         this.defaultMQProducer = new DefaultMQProducer(MixAll.CLIENT_INNER_PRODUCER_GROUP);
         this.defaultMQProducer.resetClientConfig(clientConfig);
 
+        // 记录pull push 的tps rt
         this.consumerStatsManager = new ConsumerStatsManager(this.scheduledExecutorService);
 
         log.info("Created a new client Instance, InstanceIndex:{}, ClientID:{}, ClientConfig:{}, ClientVersion:{}, SerializerType:{}",
