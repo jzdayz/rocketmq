@@ -247,7 +247,7 @@ public class DefaultMQProducerImpl implements MQProducerInner {
     @Override
     public boolean isPublishTopicNeedUpdate(String topic) {
         TopicPublishInfo prev = this.topicPublishInfoTable.get(topic);
-
+        // topic对应的信息被删除 || 没有消息队列
         return null == prev || !prev.ok();
     }
 
