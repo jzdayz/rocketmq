@@ -236,6 +236,7 @@ public class MQClientInstance {
                     // 启动mq的netty客户端
                     this.mQClientAPIImpl.start();
                     // Start various schedule tasks
+                    // 后台任务
                     this.startScheduledTask();
                     // Start pull service
                     this.pullMessageService.start();
@@ -283,6 +284,7 @@ public class MQClientInstance {
             }
         }, 10, this.clientConfig.getPollNameServerInterval(), TimeUnit.MILLISECONDS);
 
+        // 关闭下线的broker
         this.scheduledExecutorService.scheduleAtFixedRate(new Runnable() {
 
             @Override
@@ -296,6 +298,7 @@ public class MQClientInstance {
             }
         }, 1000, this.clientConfig.getHeartbeatBrokerInterval(), TimeUnit.MILLISECONDS);
 
+        // 持久化消费队列的offset
         this.scheduledExecutorService.scheduleAtFixedRate(new Runnable() {
 
             @Override
@@ -308,6 +311,7 @@ public class MQClientInstance {
             }
         }, 1000 * 10, this.clientConfig.getPersistConsumerOffsetInterval(), TimeUnit.MILLISECONDS);
 
+        // 这个没啥用了，都是空实现。。。。
         this.scheduledExecutorService.scheduleAtFixedRate(new Runnable() {
 
             @Override
@@ -496,7 +500,7 @@ public class MQClientInstance {
         }
     }
 
-    public void adjustThreadPool() {
+    public void  adjustThreadPool() {
         Iterator<Entry<String, MQConsumerInner>> it = this.consumerTable.entrySet().iterator();
         while (it.hasNext()) {
             Entry<String, MQConsumerInner> entry = it.next();
