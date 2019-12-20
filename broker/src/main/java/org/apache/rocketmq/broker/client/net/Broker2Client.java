@@ -80,6 +80,9 @@ public class Broker2Client {
         return this.brokerController.getRemotingServer().invokeSync(channel, request, 10000);
     }
 
+    /**
+     *  通知对应管道的客户端，发生了消费组的信息改变
+     */
     public void notifyConsumerIdsChanged(
         final Channel channel,
         final String consumerGroup) {

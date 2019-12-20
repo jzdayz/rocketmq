@@ -17,18 +17,17 @@
 
 package org.apache.rocketmq.broker.filter;
 
-import java.util.concurrent.ConcurrentMap;
 import org.apache.rocketmq.broker.BrokerController;
 import org.apache.rocketmq.broker.BrokerPathConfigHelper;
 import org.apache.rocketmq.common.ConfigManager;
 import org.apache.rocketmq.common.constant.LoggerName;
-import org.apache.rocketmq.logging.InternalLogger;
-import org.apache.rocketmq.logging.InternalLoggerFactory;
+import org.apache.rocketmq.common.filter.ExpressionType;
 import org.apache.rocketmq.common.protocol.heartbeat.SubscriptionData;
 import org.apache.rocketmq.filter.FilterFactory;
-import org.apache.rocketmq.common.filter.ExpressionType;
 import org.apache.rocketmq.filter.util.BloomFilter;
 import org.apache.rocketmq.filter.util.BloomFilterData;
+import org.apache.rocketmq.logging.InternalLogger;
+import org.apache.rocketmq.logging.InternalLoggerFactory;
 import org.apache.rocketmq.remoting.protocol.RemotingSerializable;
 
 import java.util.Collection;
@@ -36,6 +35,7 @@ import java.util.HashSet;
 import java.util.Iterator;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.ConcurrentMap;
 
 /**
  * Consumer filter data manager.Just manage the consumers use expression filter.
@@ -102,6 +102,7 @@ public class ConsumerFilterManager extends ConfigManager {
     }
 
     public void register(final String consumerGroup, final Collection<SubscriptionData> subList) {
+        // 挨个订阅信息注册
         for (SubscriptionData subscriptionData : subList) {
             register(
                 subscriptionData.getTopic(),
@@ -112,6 +113,7 @@ public class ConsumerFilterManager extends ConfigManager {
             );
         }
 
+        // 检查，是否有另外的线程，改变了消费组对应的订阅过滤信息
         // make illegal topic dead.
         Collection<ConsumerFilterData> groupFilterData = getByGroup(consumerGroup);
 
@@ -126,7 +128,7 @@ public class ConsumerFilterManager extends ConfigManager {
                     break;
                 }
             }
-
+            // 被另外线程改掉的容器中，不含有，则移除掉
             if (!exist && !filterData.isDead()) {
                 filterData.setDeadTime(System.currentTimeMillis());
                 log.info("Consumer filter changed: {}, make illegal topic dead:{}", consumerGroup, filterData);
@@ -136,6 +138,7 @@ public class ConsumerFilterManager extends ConfigManager {
 
     public boolean register(final String topic, final String consumerGroup, final String expression,
         final String type, final long clientVersion) {
+        // 根据tag过滤
         if (ExpressionType.isTagType(type)) {
             return false;
         }
@@ -369,6 +372,7 @@ public class ConsumerFilterManager extends ConfigManager {
                     return true;
                 } else {
                     if (clientVersion <= old.getClientVersion()) {
+                        // 过滤类型发生了变化||过滤内容发生了变化
                         if (!type.equals(old.getExpressionType()) || !expression.equals(old.getExpression())) {
                             log.warn("Ignore consumer({} : {}) filter(concurrent), because of version {} <= {}, but maybe info changed!old={}:{}, ignored={}:{}",
                                 consumerGroup, topic,

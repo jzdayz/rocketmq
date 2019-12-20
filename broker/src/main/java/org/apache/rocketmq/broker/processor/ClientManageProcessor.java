@@ -71,6 +71,9 @@ public class ClientManageProcessor implements NettyRequestProcessor {
         return false;
     }
 
+    /**
+     *  心跳,客户端注册消费者和生产者的信息至broker
+     */
     public RemotingCommand heartBeat(ChannelHandlerContext ctx, RemotingCommand request) {
         RemotingCommand response = RemotingCommand.createResponseCommand(null);
         HeartbeatData heartbeatData = HeartbeatData.decode(request.getBody(), HeartbeatData.class);
@@ -82,6 +85,7 @@ public class ClientManageProcessor implements NettyRequestProcessor {
         );
 
         for (ConsumerData data : heartbeatData.getConsumerDataSet()) {
+            // 创建或者查找对应组下面的订阅信息
             SubscriptionGroupConfig subscriptionGroupConfig =
                 this.brokerController.getSubscriptionGroupManager().findSubscriptionGroupConfig(
                     data.getGroupName());
@@ -93,12 +97,14 @@ public class ClientManageProcessor implements NettyRequestProcessor {
                     topicSysFlag = TopicSysFlag.buildSysFlag(false, true);
                 }
                 String newTopic = MixAll.getRetryTopic(data.getGroupName());
+                // 创建topic对应的重试topic队列，并持久化配置
                 this.brokerController.getTopicConfigManager().createTopicInSendMessageBackMethod(
                     newTopic,
                     subscriptionGroupConfig.getRetryQueueNums(),
                     PermName.PERM_WRITE | PermName.PERM_READ, topicSysFlag);
             }
 
+            // 注册订阅信息
             boolean changed = this.brokerController.getConsumerManager().registerConsumer(
                 data.getGroupName(),
                 clientChannelInfo,
@@ -116,11 +122,12 @@ public class ClientManageProcessor implements NettyRequestProcessor {
                 );
             }
         }
-
+        // 生产者注册
         for (ProducerData data : heartbeatData.getProducerDataSet()) {
             this.brokerController.getProducerManager().registerProducer(data.getGroupName(),
                 clientChannelInfo);
         }
+        // return
         response.setCode(ResponseCode.SUCCESS);
         response.setRemark(null);
         return response;
@@ -187,6 +194,7 @@ public class ClientManageProcessor implements NettyRequestProcessor {
             }
 
             try {
+                // 检查一下 客户端发送过来的 过滤类型，是否支持， sql92 or tag
                 FilterFactory.INSTANCE.get(subscriptionData.getExpressionType()).compile(subscriptionData.getSubString());
             } catch (Exception e) {
                 log.warn("Client {}@{} filter message, but failed to compile expression! sub={}, error={}",

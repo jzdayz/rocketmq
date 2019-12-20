@@ -64,6 +64,9 @@ import org.apache.rocketmq.store.stats.BrokerStatsManager;
 import java.nio.ByteBuffer;
 import java.util.List;
 
+/**
+ *  服务器处理拉取请求的处理器
+ */
 public class PullMessageProcessor implements NettyRequestProcessor {
     private static final InternalLogger log = InternalLoggerFactory.getLogger(LoggerName.BROKER_LOGGER_NAME);
     private final BrokerController brokerController;
