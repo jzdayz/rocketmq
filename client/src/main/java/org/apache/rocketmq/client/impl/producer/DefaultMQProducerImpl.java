@@ -188,6 +188,7 @@ public class DefaultMQProducerImpl implements MQProducerInner {
             @Override
             public void run() {
                 try {
+                    // 扫描移除过期的请求
                     RequestFutureTable.scanExpiredRequest();
                 } catch (Throwable e) {
                     log.error("scan RequestFutureTable exception", e);

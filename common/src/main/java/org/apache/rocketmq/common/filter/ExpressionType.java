@@ -17,6 +17,9 @@
 
 package org.apache.rocketmq.common.filter;
 
+/**
+ *  支持sql 92 和tag的方式过滤消息
+ */
 public class ExpressionType {
 
     /**

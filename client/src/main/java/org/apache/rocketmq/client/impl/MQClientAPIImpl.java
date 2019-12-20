@@ -623,7 +623,7 @@ public class MQClientAPIImpl {
         RemotingCommand request = RemotingCommand.createRequestCommand(RequestCode.PULL_MESSAGE, requestHeader);
 
         switch (communicationMode) {
-            case ONEWAY:
+            case ONEWAY:/*拉取不可以单向*/
                 assert false;
                 return null;
             case ASYNC:

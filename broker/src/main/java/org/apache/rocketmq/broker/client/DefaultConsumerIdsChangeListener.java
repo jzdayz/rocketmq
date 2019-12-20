@@ -17,12 +17,11 @@
 package org.apache.rocketmq.broker.client;
 
 import io.netty.channel.Channel;
+import org.apache.rocketmq.broker.BrokerController;
+import org.apache.rocketmq.common.protocol.heartbeat.SubscriptionData;
 
 import java.util.Collection;
 import java.util.List;
-
-import org.apache.rocketmq.broker.BrokerController;
-import org.apache.rocketmq.common.protocol.heartbeat.SubscriptionData;
 
 public class DefaultConsumerIdsChangeListener implements ConsumerIdsChangeListener {
     private final BrokerController brokerController;
@@ -37,13 +36,14 @@ public class DefaultConsumerIdsChangeListener implements ConsumerIdsChangeListen
             return;
         }
         switch (event) {
-            case CHANGE:
+            case CHANGE:/*通知消费者，有订阅信息，或者配置变化*/
                 if (args == null || args.length < 1) {
                     return;
                 }
                 List<Channel> channels = (List<Channel>) args[0];
                 if (channels != null && brokerController.getBrokerConfig().isNotifyConsumerIdsChangedEnable()) {
                     for (Channel chl : channels) {
+                        // 所有的连接都需要通知
                         this.brokerController.getBroker2Client().notifyConsumerIdsChanged(chl, group);
                     }
                 }
@@ -56,6 +56,7 @@ public class DefaultConsumerIdsChangeListener implements ConsumerIdsChangeListen
                     return;
                 }
                 Collection<SubscriptionData> subscriptionDataList = (Collection<SubscriptionData>) args[0];
+                // 注册在内存中
                 this.brokerController.getConsumerFilterManager().register(group, subscriptionDataList);
                 break;
             default:
