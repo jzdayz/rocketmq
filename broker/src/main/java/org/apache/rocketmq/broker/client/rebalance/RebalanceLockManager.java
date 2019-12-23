@@ -16,16 +16,17 @@
  */
 package org.apache.rocketmq.broker.client.rebalance;
 
+import org.apache.rocketmq.common.constant.LoggerName;
+import org.apache.rocketmq.common.message.MessageQueue;
+import org.apache.rocketmq.logging.InternalLogger;
+import org.apache.rocketmq.logging.InternalLoggerFactory;
+
 import java.util.HashSet;
 import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
 import java.util.concurrent.locks.Lock;
 import java.util.concurrent.locks.ReentrantLock;
-import org.apache.rocketmq.common.constant.LoggerName;
-import org.apache.rocketmq.logging.InternalLogger;
-import org.apache.rocketmq.logging.InternalLoggerFactory;
-import org.apache.rocketmq.common.message.MessageQueue;
 
 public class RebalanceLockManager {
     private static final InternalLogger log = InternalLoggerFactory.getLogger(LoggerName.REBALANCE_LOCK_LOGGER_NAME);
@@ -120,9 +121,11 @@ public class RebalanceLockManager {
         Set<MessageQueue> notLockedMqs = new HashSet<MessageQueue>(mqs.size());
 
         for (MessageQueue mq : mqs) {
+            // 如果之前就是自己锁住的并且没有过期，那么更新一下锁的时间即可
             if (this.isLocked(group, mq, clientId)) {
                 lockedMqs.add(mq);
             } else {
+                // 没锁住的
                 notLockedMqs.add(mq);
             }
         }
@@ -136,10 +139,11 @@ public class RebalanceLockManager {
                         groupValue = new ConcurrentHashMap<>(32);
                         this.mqLockTable.put(group, groupValue);
                     }
-
+                    // 便利没有锁住的队列
                     for (MessageQueue mq : notLockedMqs) {
                         LockEntry lockEntry = groupValue.get(mq);
                         if (null == lockEntry) {
+                            // 直接锁住
                             lockEntry = new LockEntry();
                             lockEntry.setClientId(clientId);
                             groupValue.put(mq, lockEntry);
@@ -149,16 +153,20 @@ public class RebalanceLockManager {
                                 clientId,
                                 mq);
                         }
-
+                        // 如果目前已经锁住了
                         if (lockEntry.isLocked(clientId)) {
+                            // 更新下时间即可
                             lockEntry.setLastUpdateTimestamp(System.currentTimeMillis());
                             lockedMqs.add(mq);
                             continue;
                         }
 
+                        // 之前被锁上的clientId
                         String oldClientId = lockEntry.getClientId();
 
+                        // 过期了
                         if (lockEntry.isExpired()) {
+                            // 更改时间即可
                             lockEntry.setClientId(clientId);
                             lockEntry.setLastUpdateTimestamp(System.currentTimeMillis());
                             log.warn(
@@ -198,13 +206,16 @@ public class RebalanceLockManager {
                     for (MessageQueue mq : mqs) {
                         LockEntry lockEntry = groupValue.get(mq);
                         if (null != lockEntry) {
+                            // 请求的clientId 和 队列锁对象是同一个clientId
                             if (lockEntry.getClientId().equals(clientId)) {
+                                // 移除即可
                                 groupValue.remove(mq);
                                 log.info("unlockBatch, Group: {} {} {}",
                                     group,
                                     mq,
                                     clientId);
                             } else {
+                                // 只能解锁请求的clientId拥有的
                                 log.warn("unlockBatch, but mq locked by other client: {}, Group: {} {} {}",
                                     lockEntry.getClientId(),
                                     group,
@@ -257,6 +268,7 @@ public class RebalanceLockManager {
         }
 
         public boolean isExpired() {
+            // 过期
             boolean expired =
                 (System.currentTimeMillis() - this.lastUpdateTimestamp) > REBALANCE_LOCK_MAX_LIVE_TIME;
 
