@@ -663,6 +663,7 @@ public class DefaultMessageStore implements MessageStore {
     }
 
     public long getMinOffsetInQueue(String topic, int queueId) {
+        // 消费队列
         ConsumeQueue logic = this.findConsumeQueue(topic, queueId);
         if (logic != null) {
             return logic.getMinOffsetInQueue();
@@ -1148,6 +1149,7 @@ public class DefaultMessageStore implements MessageStore {
             ConsumeQueue newLogic = new ConsumeQueue(
                 topic,
                 queueId,
+                // 存储路径
                 StorePathConfigHelper.getStorePathConsumeQueue(this.messageStoreConfig.getStorePathRootDir()),
                 this.getMessageStoreConfig().getMappedFileSizeConsumeQueue(),
                 this);
