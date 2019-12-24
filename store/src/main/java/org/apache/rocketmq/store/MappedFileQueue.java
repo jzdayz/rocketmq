@@ -428,7 +428,8 @@ public class MappedFileQueue {
     }
 
     /**
-     * @param flushLeastPages 至少刷新的页
+     * @param flushLeastPages 至少刷新的页(每页大小是4kb)
+     *                        如果为0代表可以刷多少就刷多少
      */
     public boolean flush(final int flushLeastPages) {
         boolean result = true;

@@ -55,12 +55,14 @@ import java.util.concurrent.TimeUnit;
  * Store all metadata downtime for recovery, data protection reliability
  */
 public class CommitLog {
-    // Message's MAGIC CODE daa320a7
+    // Message's MAGIC CODE daa320a7   固定的消息魔数
     public final static int MESSAGE_MAGIC_CODE = -626843481;
     protected static final InternalLogger log = InternalLoggerFactory.getLogger(LoggerName.STORE_LOGGER_NAME);
     // End of file empty MAGIC CODE cbd43194
     protected final static int BLANK_MAGIC_CODE = -875286124;
+    // 映射文件队列
     protected final MappedFileQueue mappedFileQueue;
+    // 消息存储
     protected final DefaultMessageStore defaultMessageStore;
     private final FlushCommitLogService flushCommitLogService;
 
@@ -77,13 +79,16 @@ public class CommitLog {
     protected final PutMessageLock putMessageLock;
 
     public CommitLog(final DefaultMessageStore defaultMessageStore) {
-        this.mappedFileQueue = new MappedFileQueue(defaultMessageStore.getMessageStoreConfig().getStorePathCommitLog(),
-            defaultMessageStore.getMessageStoreConfig().getMappedFileSizeCommitLog(), defaultMessageStore.getAllocateMappedFileService());
+        // 文件映射队列
+        this.mappedFileQueue = new MappedFileQueue(defaultMessageStore.getMessageStoreConfig().getStorePathCommitLog()/*配置的文件路径*/,
+            defaultMessageStore.getMessageStoreConfig().getMappedFileSizeCommitLog()/*配置的每个文件的存储大小，默认是1G*/, defaultMessageStore.getAllocateMappedFileService()/*分配MappedFile*/);
         this.defaultMessageStore = defaultMessageStore;
 
+        // 配置为同步刷盘
         if (FlushDiskType.SYNC_FLUSH == defaultMessageStore.getMessageStoreConfig().getFlushDiskType()) {
             this.flushCommitLogService = new GroupCommitService();
         } else {
+            // 异步刷盘
             this.flushCommitLogService = new FlushRealTimeService();
         }
 
@@ -1428,6 +1433,9 @@ public class CommitLog {
             this.wakeup();
         }
 
+        /**
+         *  交换读写集合
+         */
         private void swapRequests() {
             List<GroupCommitRequest> tmp = this.requestsWrite;
             this.requestsWrite = this.requestsRead;
@@ -1442,13 +1450,15 @@ public class CommitLog {
                         // two times the flush
                         boolean flushOK = false;
                         for (int i = 0; i < 2 && !flushOK; i++) {
+                            // true : 已经刷新的位置 >= 请求刷新的位置 (不需要再刷)
                             flushOK = CommitLog.this.mappedFileQueue.getFlushedWhere() >= req.getNextOffset();
-
+                            // 如果可以刷盘
                             if (!flushOK) {
+                                // 直接刷盘
                                 CommitLog.this.mappedFileQueue.flush(0);
                             }
                         }
-
+                        // 唤醒请求的线程
                         req.wakeupCustomer(flushOK ? PutMessageStatus.PUT_OK : PutMessageStatus.FLUSH_DISK_TIMEOUT);
                     }
 

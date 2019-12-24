@@ -169,13 +169,13 @@ public class AdminBrokerProcessor extends AsyncNettyRequestProcessor implements 
                 return this.getBrokerRuntimeInfo(ctx, request);
             case RequestCode.LOCK_BATCH_MQ:/*锁住消息队列*/
                 return this.lockBatchMQ(ctx, request);
-            case RequestCode.UNLOCK_BATCH_MQ:
+            case RequestCode.UNLOCK_BATCH_MQ:/*解锁消息队列*/
                 return this.unlockBatchMQ(ctx, request);
-            case RequestCode.UPDATE_AND_CREATE_SUBSCRIPTIONGROUP:
+            case RequestCode.UPDATE_AND_CREATE_SUBSCRIPTIONGROUP:/*更新或者创建订阅组配置*/
                 return this.updateAndCreateSubscriptionGroup(ctx, request);
-            case RequestCode.GET_ALL_SUBSCRIPTIONGROUP_CONFIG:
+            case RequestCode.GET_ALL_SUBSCRIPTIONGROUP_CONFIG:/*将整个订阅组配置管理器返回*/
                 return this.getAllSubscriptionGroup(ctx, request);
-            case RequestCode.DELETE_SUBSCRIPTIONGROUP:
+            case RequestCode.DELETE_SUBSCRIPTIONGROUP:/*删除指定的订阅组配置*/
                 return this.deleteSubscriptionGroup(ctx, request);
             case RequestCode.GET_TOPIC_STATS_INFO:
                 return this.getTopicStatsInfo(ctx, request);
@@ -735,6 +735,7 @@ public class AdminBrokerProcessor extends AsyncNettyRequestProcessor implements 
 
         TopicStatsTable topicStatsTable = new TopicStatsTable();
         for (int i = 0; i < topicConfig.getWriteQueueNums(); i++) {
+            // 每个可写的队列，生成一个队列对象
             MessageQueue mq = new MessageQueue();
             mq.setTopic(topic);
             mq.setBrokerName(this.brokerController.getBrokerConfig().getBrokerName());
