@@ -70,6 +70,12 @@ public class TopicPublishInfo {
         this.haveTopicRouterInfo = haveTopicRouterInfo;
     }
 
+    /**
+     * 选择一个messageQueue
+     * @param lastBrokerName 上次的brokerName
+     * @return 返回与 lastBrokerName 不一致的队列，
+     *         如果lastBrokerName为空，name就随机选择一个队列
+     */
     public MessageQueue selectOneMessageQueue(final String lastBrokerName) {
         if (lastBrokerName == null) {
             return selectOneMessageQueue();
@@ -80,6 +86,7 @@ public class TopicPublishInfo {
                 if (pos < 0)
                     pos = 0;
                 MessageQueue mq = this.messageQueueList.get(pos);
+                // 返回的队列brokerName与lastBrokerName不一样
                 if (!mq.getBrokerName().equals(lastBrokerName)) {
                     return mq;
                 }

@@ -102,6 +102,7 @@ public class MixAll {
             int split = brokerAddr.lastIndexOf(":");
             String ip = brokerAddr.substring(0, split);
             String port = brokerAddr.substring(split + 1);
+            // vip管道的port = brokerPort - 2
             String brokerAddrNew = ip + ":" + (Integer.parseInt(port) - 2);
             return brokerAddrNew;
         } else {

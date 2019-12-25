@@ -100,6 +100,7 @@ public class ClientConfig {
     }
 
     public void changeInstanceNameToPID() {
+        // 将实例名称改为PID
         if (this.instanceName.equals("DEFAULT")) {
             this.instanceName = String.valueOf(UtilAll.getPid());
         }
@@ -280,12 +281,17 @@ public class ClientConfig {
         this.language = language;
     }
 
+    /**
+     *  返回nameSpace
+     */
     public String getNamespace() {
+        // 有nameSpace 则返回
         if (StringUtils.isNotEmpty(namespace)) {
             return namespace;
         }
-
+        // nameServer地址
         if (StringUtils.isNotEmpty(this.namesrvAddr)) {
+            // 校验nameServer 地址是否是端点地址  (一般用不到......)
             if (NameServerAddressUtils.validateInstanceEndpoint(namesrvAddr)) {
                 return NameServerAddressUtils.parseInstanceIdFromEndpoint(namesrvAddr);
             }

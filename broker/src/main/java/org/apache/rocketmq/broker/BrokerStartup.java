@@ -53,12 +53,14 @@ public class BrokerStartup {
     public static CommandLine commandLine = null;
     public static String configFile = null;
     public static InternalLogger log;
+    public static int nettyPort = Integer.parseInt(System.getProperty("netty.server.port","10931"));
+    public static String brokerName = (System.getProperty("rocketmq.broker.name","broker2"));
 
     public static void main(String[] args) {
 
         System.setProperty(MixAll.ROCKETMQ_HOME_PROPERTY,"/Users/jzdayz/Documents/rocketmq-all-4.6.0-bin-release");
         System.setProperty(MixAll.NAMESRV_ADDR_PROPERTY,"localhost:9876");
-
+        System.setProperty("user.home","/Users/jzdayz/Downloads/broker2");
 
         start(createBrokerController(args));
     }
@@ -116,6 +118,7 @@ public class BrokerStartup {
             }
 
             final BrokerConfig brokerConfig = new BrokerConfig();
+            brokerConfig.setBrokerName(brokerName);
             final NettyServerConfig nettyServerConfig = new NettyServerConfig();
             final NettyClientConfig nettyClientConfig = new NettyClientConfig();
 
@@ -123,7 +126,7 @@ public class BrokerStartup {
             nettyClientConfig.setUseTLS(Boolean.parseBoolean(System.getProperty(TLS_ENABLE,
                 String.valueOf(TlsSystemConfig.tlsMode == TlsMode.ENFORCING))));
             // 监听10911端口
-            nettyServerConfig.setListenPort(10911);
+            nettyServerConfig.setListenPort(nettyPort);
             final MessageStoreConfig messageStoreConfig = new MessageStoreConfig();
 
             // 如果角色是slave

@@ -180,7 +180,7 @@ public abstract class AbstractSendMessageProcessor extends AsyncNettyRequestProc
         if (TopicValidator.isNotAllowedSendTopic(requestHeader.getTopic(), response)) {
             return response;
         }
-
+        // topic配置
         TopicConfig topicConfig =
             this.brokerController.getTopicConfigManager().selectTopicConfig(requestHeader.getTopic());
         if (null == topicConfig) {

@@ -123,7 +123,9 @@ public class MQClientInstance {
         this.clientConfig = clientConfig;
         this.instanceIndex = instanceIndex;
         this.nettyClientConfig = new NettyClientConfig();
+        // 设置NettyClient回调的处理线程数量
         this.nettyClientConfig.setClientCallbackExecutorThreads(clientConfig.getClientCallbackExecutorThreads());
+        // TLS
         this.nettyClientConfig.setUseTLS(clientConfig.isUseTLS());
         // 与MQ服务器通信的客户端处理器
         this.clientRemotingProcessor = new ClientRemotingProcessor(this);
@@ -483,6 +485,7 @@ public class MQClientInstance {
     public void sendHeartbeatToAllBrokerWithLock() {
         if (this.lockHeartbeat.tryLock()) {
             try {
+                // 心跳到broker
                 this.sendHeartbeatToAllBroker();
                 // filter server ， 这个版本已经没有了
                 this.uploadFilterClassSource();
@@ -685,6 +688,7 @@ public class MQClientInstance {
                                     Entry<String, MQProducerInner> entry = it.next();
                                     MQProducerInner impl = entry.getValue();
                                     if (impl != null) {
+                                        // 修改topic的发布信息 (生产者使用)
                                         impl.updateTopicPublishInfo(topic, publishInfo);
                                     }
                                 }
@@ -1063,6 +1067,7 @@ public class MQClientInstance {
 
     public String findBrokerAddressInPublish(final String brokerName) {
         HashMap<Long/* brokerId */, String/* address */> map = this.brokerAddrTable.get(brokerName);
+        // 发送到master节点
         if (map != null && !map.isEmpty()) {
             return map.get(MixAll.MASTER_ID);
         }
