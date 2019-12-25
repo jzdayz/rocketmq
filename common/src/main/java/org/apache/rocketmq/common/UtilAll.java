@@ -305,6 +305,13 @@ public class UtilAll {
         return result;
     }
 
+    /**
+     *  压缩字节
+     * @param src 字节数组
+     * @param level 压缩级别
+     * @return 压缩过的字节
+     * @throws IOException
+     */
     public static byte[] compress(final byte[] src, final int level) throws IOException {
         byte[] result = src;
         ByteArrayOutputStream byteArrayOutputStream = new ByteArrayOutputStream(src.length);
