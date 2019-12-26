@@ -54,13 +54,13 @@ public class BrokerStartup {
     public static String configFile = null;
     public static InternalLogger log;
     public static int nettyPort = Integer.parseInt(System.getProperty("netty.server.port","10931"));
-    public static String brokerName = (System.getProperty("rocketmq.broker.name","broker2"));
+    public static String brokerName = (System.getProperty("rocketmq.broker.name","broker11"));
 
     public static void main(String[] args) {
 
         System.setProperty(MixAll.ROCKETMQ_HOME_PROPERTY,"/Users/jzdayz/Documents/rocketmq-all-4.6.0-bin-release");
         System.setProperty(MixAll.NAMESRV_ADDR_PROPERTY,"localhost:9876");
-        System.setProperty("user.home","/Users/jzdayz/Downloads/broker2");
+        System.setProperty("user.home","/Users/jzdayz/Downloads/"+brokerName);
 
         start(createBrokerController(args));
     }
