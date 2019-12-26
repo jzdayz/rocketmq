@@ -176,6 +176,17 @@ public class MQClientAPIImpl {
 
     }
 
+    /**
+     *  创建或者修改topic配置
+     * @param addr broker地址
+     * @param defaultTopic
+     * @param topicConfig topic配置
+     * @param timeoutMillis 超时时间
+     * @throws RemotingException
+     * @throws MQBrokerException
+     * @throws InterruptedException
+     * @throws MQClientException
+     */
     public void createTopic(final String addr, final String defaultTopic, final TopicConfig topicConfig,
         final long timeoutMillis)
         throws RemotingException, MQBrokerException, InterruptedException, MQClientException {
