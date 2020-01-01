@@ -23,24 +23,27 @@ import java.nio.charset.Charset;
 
 /**
  * Simple implement of bloom filter.
+ *
+ *  布隆过滤器，存在的不一定存在，不存在的一定不存在
+ *  https://zh.wikipedia.org/wiki/%E5%B8%83%E9%9A%86%E8%BF%87%E6%BB%A4%E5%99%A8
  */
 public class BloomFilter {
 
     public static final Charset UTF_8 = Charset.forName("UTF-8");
 
-    // as error rate, 10/100 = 0.1
+    // as error rate, 10/100 = 0.1 错误率
     private int f = 10;
     private int n = 128;
 
-    // hash function num, by calculation.
+    // hash function num, by calculation. 散列函数的次数
     private int k;
-    // bit count, by calculation.
+    // bit count, by calculation.  位的数量
     private int m;
 
     /**
      * Create bloom filter by error rate and mapping num.
      *
-     * @param f error rate
+     * @param f error rate 错误率 10 -> 10%
      * @param n num will mapping to bit
      */
     public static BloomFilter createByFn(int f, int n) {

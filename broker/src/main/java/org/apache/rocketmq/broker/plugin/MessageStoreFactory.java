@@ -17,11 +17,15 @@
 
 package org.apache.rocketmq.broker.plugin;
 
-import java.io.IOException;
-import java.lang.reflect.Constructor;
 import org.apache.rocketmq.store.MessageStore;
 
+import java.io.IOException;
+import java.lang.reflect.Constructor;
+
 public final class MessageStoreFactory {
+    /**
+     *  加载plugin ，AbstractPluginMessageStore实现类 ， 增强MessageStore的实现类
+     */
     public final static MessageStore build(MessageStorePluginContext context, MessageStore messageStore)
         throws IOException {
         String plugin = context.getBrokerConfig().getMessageStorePlugIn();
