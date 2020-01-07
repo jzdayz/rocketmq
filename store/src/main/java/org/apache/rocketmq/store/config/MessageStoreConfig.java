@@ -21,6 +21,10 @@ import org.apache.rocketmq.store.ConsumeQueue;
 
 import java.io.File;
 
+
+/**
+ *  配置类
+ */
 public class MessageStoreConfig {
     //The root directory in which the log data is kept
     @ImportantField
@@ -82,6 +86,7 @@ public class MessageStoreConfig {
     // Flow control for ConsumeQueue
     private int putMsgIndexHightWater = 600000;
     // The maximum size of message,default is 4M
+    // 最大的消息size 4m
     private int maxMessageSize = 1024 * 1024 * 4;
     // Whether check the CRC32 of the records consumed.
     // This ensures no on-the-wire or on-disk corruption to the messages occurred.
@@ -94,6 +99,7 @@ public class MessageStoreConfig {
     // Flush page size when the disk in warming state
     private int flushLeastPagesWhenWarmMapedFile = 1024 / 4 * 16;
     // How many pages are to be flushed when flush ConsumeQueue
+    // 刷新最少页
     private int flushConsumeQueueLeastPages = 2;
     private int flushCommitLogThoroughInterval = 1000 * 10;
     private int commitCommitLogThoroughInterval = 200;

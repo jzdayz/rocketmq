@@ -126,6 +126,7 @@ public class MappedFileQueue {
             Iterator<MappedFile> iterator = files.iterator();
             while (iterator.hasNext()) {
                 MappedFile cur = iterator.next();
+                // 已经没有的mappedFile，就可以remove了
                 if (!this.mappedFiles.contains(cur)) {
                     iterator.remove();
                     log.info("This mappedFile {} is not contained by mappedFiles, so skip it.", cur.getFileName());
@@ -133,6 +134,7 @@ public class MappedFileQueue {
             }
 
             try {
+                // 内存中移除files
                 if (!this.mappedFiles.removeAll(files)) {
                     log.error("deleteExpiredFile remove failed.");
                 }
@@ -353,8 +355,11 @@ public class MappedFileQueue {
         if (null != mfs) {
             for (int i = 0; i < mfsLength; i++) {
                 MappedFile mappedFile = (MappedFile) mfs[i];
+                // 文件最后修改时间 + 过期时间
                 long liveMaxTimestamp = mappedFile.getLastModifiedTimestamp() + expiredTime;
+                // 超过可以存活的时间 || 立即clean
                 if (System.currentTimeMillis() >= liveMaxTimestamp || cleanImmediately) {
+                    // 销毁mappedFile
                     if (mappedFile.destroy(intervalForcibly)) {
                         files.add(mappedFile);
                         deleteCount++;
@@ -385,17 +390,19 @@ public class MappedFileQueue {
     }
 
     public int deleteExpiredFileByOffset(long offset, int unitSize) {
+        // 所有的mappedFiles
         Object[] mfs = this.copyMappedFiles(0);
 
         List<MappedFile> files = new ArrayList<MappedFile>();
         int deleteCount = 0;
         if (null != mfs) {
-
+            // 这里留下最后一个，其他的均检查是否应该删除
             int mfsLength = mfs.length - 1;
 
             for (int i = 0; i < mfsLength; i++) {
                 boolean destroy;
                 MappedFile mappedFile = (MappedFile) mfs[i];
+                // 返回 this.mappedFileSize - unitSize 到 可以读取的字节 result
                 SelectMappedBufferResult result = mappedFile.selectMappedBuffer(this.mappedFileSize - unitSize);
                 if (result != null) {
                     long maxOffsetInLogicQueue = result.getByteBuffer().getLong();
@@ -407,12 +414,14 @@ public class MappedFileQueue {
                     }
                 } else if (!mappedFile.isAvailable()) { // Handle hanged file.
                     log.warn("Found a hanged consume queue file, attempting to delete it.");
+                    // mappedFile 是不可以用的，那么，直接删除即可
                     destroy = true;
                 } else {
                     log.warn("this being not executed forever.");
                     break;
                 }
 
+                // 销毁
                 if (destroy && mappedFile.destroy(1000 * 60)) {
                     files.add(mappedFile);
                     deleteCount++;
@@ -422,6 +431,7 @@ public class MappedFileQueue {
             }
         }
 
+        // 删除内存中的mappedFile
         deleteExpiredFile(files);
 
         return deleteCount;
@@ -470,6 +480,7 @@ public class MappedFileQueue {
      *
      * @param offset Offset.
      * @param returnFirstOnNotFound If the mapped file is not found, then return the first one.
+     *                              如果没有找到，则返回第一个
      * @return Mapped file or null (when not found and returnFirstOnNotFound is <code>false</code>).
      */
     public MappedFile findMappedFileByOffset(final long offset, final boolean returnFirstOnNotFound) {
@@ -558,6 +569,7 @@ public class MappedFileQueue {
     public boolean retryDeleteFirstFile(final long intervalForcibly) {
         MappedFile mappedFile = this.getFirstMappedFile();
         if (mappedFile != null) {
+            // not Available 才会删除
             if (!mappedFile.isAvailable()) {
                 log.warn("the mappedFile was destroyed once, but still alive, " + mappedFile.getFileName());
                 boolean result = mappedFile.destroy(intervalForcibly);

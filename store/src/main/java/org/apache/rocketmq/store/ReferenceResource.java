@@ -40,13 +40,19 @@ public abstract class ReferenceResource {
         return this.available;
     }
 
+    /**
+     *
+     * @param intervalForcibly 多次调用此方法，必须在 intervalForcibly 指定的时间间隔之外，才会release
+     */
     public void shutdown(final long intervalForcibly) {
         if (this.available) {
             this.available = false;
             this.firstShutdownTimestamp = System.currentTimeMillis();
             this.release();
         } else if (this.getRefCount() > 0) {
+            // 上次shutdown的时间戳间隔大于等于intervalForcibly
             if ((System.currentTimeMillis() - this.firstShutdownTimestamp) >= intervalForcibly) {
+                // 减少ref
                 this.refCount.set(-1000 - this.getRefCount());
                 this.release();
             }
@@ -59,7 +65,7 @@ public abstract class ReferenceResource {
             return;
 
         synchronized (this) {
-
+            // 清理资源
             this.cleanupOver = this.cleanup(value);
         }
     }
