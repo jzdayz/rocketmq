@@ -58,6 +58,7 @@ public class ConsumeQueue {
         this.topic = topic;
         this.queueId = queueId;
 
+        // 消费队列的信息持久化路径
         String queueDir = this.storePath
             + File.separator + topic
             + File.separator + queueId;
@@ -379,10 +380,13 @@ public class ConsumeQueue {
     }
 
     public void putMessagePositionInfoWrapper(DispatchRequest request) {
+        // 最大重试30次
         final int maxRetries = 30;
+        // 队列可写
         boolean canWrite = this.defaultMessageStore.getRunningFlags().isCQWriteable();
         for (int i = 0; i < maxRetries && canWrite; i++) {
             long tagsCode = request.getTagsCode();
+            // 可写入队列拓展
             if (isExtWriteEnable()) {
                 ConsumeQueueExt.CqExtUnit cqExtUnit = new ConsumeQueueExt.CqExtUnit();
                 cqExtUnit.setFilterBitMap(request.getBitMap());
@@ -575,6 +579,9 @@ public class ConsumeQueue {
         return this.consumeQueueExt != null;
     }
 
+    /**
+     *  开启了消息队列拓展
+     */
     protected boolean isExtWriteEnable() {
         return this.consumeQueueExt != null
             && this.defaultMessageStore.getMessageStoreConfig().isEnableConsumeQueueExt();

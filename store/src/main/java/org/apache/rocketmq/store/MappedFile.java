@@ -75,6 +75,10 @@ public class MappedFile extends ReferenceResource {
     protected ByteBuffer writeBuffer = null;
     protected TransientStorePool transientStorePool = null;
     private String fileName;
+    /**
+     *  文件名的offset
+     *  比如 00000000000000000000 这个值就为0，代表最小的offset
+     */
     private long fileFromOffset;
     private File file;
     private MappedByteBuffer mappedByteBuffer;
@@ -104,7 +108,7 @@ public class MappedFile extends ReferenceResource {
     }
 
     public static void clean(final ByteBuffer buffer) {
-        // null || 不是
+        // null || 不是direct buffer || 空间为0
         if (buffer == null || !buffer.isDirect() || buffer.capacity() == 0)
             return;
         invoke(invoke(viewed(buffer), "cleaner"), "clean");
@@ -430,14 +434,20 @@ public class MappedFile extends ReferenceResource {
     }
 
     public SelectMappedBufferResult selectMappedBuffer(int pos) {
+        // 获取 writeIndex ，比如，写入了1000个字节，那么这里就是1000
         int readPosition = getReadPosition();
+        // 指定pos在 readPosition范围内
         if (pos < readPosition && pos >= 0) {
             // alive 存活
             if (this.hold()) {
+                // copy一个buf但是是公用原来的字节
                 ByteBuffer byteBuffer = this.mappedByteBuffer.slice();
+                // 定位到指定的pos
                 byteBuffer.position(pos);
+                // 计算可以读取的最大size
                 int size = readPosition - pos;
                 ByteBuffer byteBufferNew = byteBuffer.slice();
+                // 限制读取到正确的字节数
                 byteBufferNew.limit(size);
                 return new SelectMappedBufferResult(this.fileFromOffset + pos, byteBufferNew, size, this);
             }
@@ -459,7 +469,7 @@ public class MappedFile extends ReferenceResource {
                 + " have cleanup, do not do it again.");
             return true;
         }
-
+        // 清理buffer
         clean(this.mappedByteBuffer);
         TOTAL_MAPPED_VIRTUAL_MEMORY.addAndGet(this.fileSize * (-1));
         TOTAL_MAPPED_FILES.decrementAndGet();
@@ -468,14 +478,18 @@ public class MappedFile extends ReferenceResource {
     }
 
     public boolean destroy(final long intervalForcibly) {
+        // 销毁
         this.shutdown(intervalForcibly);
 
+        // 清理完成
         if (this.isCleanupOver()) {
             try {
+                // 关闭fileChannel
                 this.fileChannel.close();
                 log.info("close file channel " + this.fileName + " OK");
 
                 long beginTime = System.currentTimeMillis();
+                // 删除文件
                 boolean result = this.file.delete();
                 log.info("delete file[REF:" + this.getRefCount() + "] " + this.fileName
                     + (result ? " OK, " : " Failed, ") + "W:" + this.getWrotePosition() + " M:"

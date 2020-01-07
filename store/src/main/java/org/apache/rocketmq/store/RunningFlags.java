@@ -18,14 +18,19 @@ package org.apache.rocketmq.store;
 
 public class RunningFlags {
 
+    // 不可读
     private static final int NOT_READABLE_BIT = 1;
 
+    // 不可写
     private static final int NOT_WRITEABLE_BIT = 1 << 1;
 
+    // 写入logic队列失败
     private static final int WRITE_LOGICS_QUEUE_ERROR_BIT = 1 << 2;
 
+    // 写入indexFile失败
     private static final int WRITE_INDEX_FILE_ERROR_BIT = 1 << 3;
 
+    // 磁盘满了
     private static final int DISK_FULL_BIT = 1 << 4;
 
     private volatile int flagBits = 0;
@@ -45,6 +50,9 @@ public class RunningFlags {
         return result;
     }
 
+    /**
+     *  可读
+     */
     public boolean isReadable() {
         if ((this.flagBits & NOT_READABLE_BIT) == 0) {
             return true;
@@ -69,6 +77,9 @@ public class RunningFlags {
         return result;
     }
 
+    /**
+     *  可写 -> 没设置不可读，没设置写入logic队列失败，磁盘没满，没设置indexFile写入失败
+     */
     public boolean isWriteable() {
         if ((this.flagBits & (NOT_WRITEABLE_BIT | WRITE_LOGICS_QUEUE_ERROR_BIT | DISK_FULL_BIT | WRITE_INDEX_FILE_ERROR_BIT)) == 0) {
             return true;
@@ -78,6 +89,10 @@ public class RunningFlags {
     }
 
     //for consume queue, just ignore the DISK_FULL_BIT
+
+    /**
+     *  队列可写 -> 没设置不可读，没设置写入logic队列失败，没设置indexFile写入失败
+     */
     public boolean isCQWriteable() {
         if ((this.flagBits & (NOT_WRITEABLE_BIT | WRITE_LOGICS_QUEUE_ERROR_BIT | WRITE_INDEX_FILE_ERROR_BIT)) == 0) {
             return true;
@@ -94,6 +109,9 @@ public class RunningFlags {
         return result;
     }
 
+    /**
+     *  设置写入logic队列失败
+     */
     public void makeLogicsQueueError() {
         this.flagBits |= WRITE_LOGICS_QUEUE_ERROR_BIT;
     }
@@ -105,7 +123,9 @@ public class RunningFlags {
 
         return false;
     }
-
+    /**
+     *  设置写入IndexFile失败
+     */
     public void makeIndexFileError() {
         this.flagBits |= WRITE_INDEX_FILE_ERROR_BIT;
     }
@@ -118,14 +138,26 @@ public class RunningFlags {
         return false;
     }
 
+    /**
+     * 如果之前未含有 DISK_FULL_BIT 的flag，则返回true
+     *
+     * 设置DISK_FULL_BIT的flag
+     */
     public boolean getAndMakeDiskFull() {
+        // 未含有DISK_FULL_BIT的flag
         boolean result = !((this.flagBits & DISK_FULL_BIT) == DISK_FULL_BIT);
+        // 设置DISK_FULL_BIT的flag   | 一个为1则为1
         this.flagBits |= DISK_FULL_BIT;
         return result;
     }
-
+    /**
+     * 如果之前未含有 DISK_FULL_BIT 的flag，则返回true
+     *
+     * 取消 DISK_FULL_BIT 的flag
+     */
     public boolean getAndMakeDiskOK() {
         boolean result = !((this.flagBits & DISK_FULL_BIT) == DISK_FULL_BIT);
+        // 取消 DISK_FULL_BIT 的flag
         this.flagBits &= ~DISK_FULL_BIT;
         return result;
     }

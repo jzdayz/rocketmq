@@ -197,6 +197,9 @@ public class UtilAll {
             cal.get(Calendar.SECOND));
     }
 
+    /**
+     *  获取path对应的磁盘分区的磁盘使用率
+     */
     public static double getDiskPartitionSpaceUsedPercent(final String path) {
         if (null == path || path.isEmpty())
             return -1;

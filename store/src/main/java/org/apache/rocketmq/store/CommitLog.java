@@ -146,6 +146,13 @@ public class CommitLog {
         return this.mappedFileQueue.remainHowManyDataToFlush();
     }
 
+    /**
+     * @param expiredTime 过期时间 毫秒
+     * @param deleteFilesInterval 删除文件的时间间隔
+     * @param intervalForcibly 当多线程清除的时候，下次清除的时间间隔
+     * @param cleanImmediately 直接清除
+     * @return
+     */
     public int deleteExpiredFile(
         final long expiredTime,
         final int deleteFilesInterval,
@@ -163,9 +170,12 @@ public class CommitLog {
     }
 
     public SelectMappedBufferResult getData(final long offset, final boolean returnFirstOnNotFound) {
+        // 每个mappedFile文件大小
         int mappedFileSize = this.defaultMessageStore.getMessageStoreConfig().getMappedFileSizeCommitLog();
+        // 根据offset查找mappedFile
         MappedFile mappedFile = this.mappedFileQueue.findMappedFileByOffset(offset, returnFirstOnNotFound);
         if (mappedFile != null) {
+            // 在文件中，具体的offset
             int pos = (int) (offset % mappedFileSize);
             SelectMappedBufferResult result = mappedFile.selectMappedBuffer(pos);
             return result;
@@ -404,14 +414,14 @@ public class CommitLog {
     protected static int calMsgLength(int sysFlag, int bodyLength, int topicLength, int propertiesLength) {
         int bornhostLength = (sysFlag & MessageSysFlag.BORNHOST_V6_FLAG) == 0 ? 8 : 20;
         int storehostAddressLength = (sysFlag & MessageSysFlag.STOREHOSTADDRESS_V6_FLAG) == 0 ? 8 : 20;
-        final int msgLen = 4 //TOTALSIZE
-            + 4 //MAGICCODE
-            + 4 //BODYCRC
-            + 4 //QUEUEID
-            + 4 //FLAG
-            + 8 //QUEUEOFFSET
-            + 8 //PHYSICALOFFSET
-            + 4 //SYSFLAG
+        final int msgLen = 4 //TOTALSIZE 消息总大小
+            + 4 //MAGICCODE 魔术
+            + 4 //BODYCRC body的crc校验码
+            + 4 //QUEUEID 队列ID
+            + 4 //FLAG flag
+            + 8 //QUEUEOFFSET 队列的offset
+            + 8 //PHYSICALOFFSET 物理的offset
+            + 4 //SYSFLAG 系统flag
             + 8 //BORNTIMESTAMP
             + bornhostLength //BORNHOST
             + 8 //STORETIMESTAMP
@@ -1161,6 +1171,7 @@ public class CommitLog {
         MappedFile mappedFile = this.mappedFileQueue.getFirstMappedFile();
         if (mappedFile != null) {
             if (mappedFile.isAvailable()) {
+                // 获取mappedFile的最小offset
                 return mappedFile.getFileFromOffset();
             } else {
                 return this.rollNextFile(mappedFile.getFileFromOffset());
