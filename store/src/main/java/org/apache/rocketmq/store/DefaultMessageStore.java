@@ -61,10 +61,13 @@ public class DefaultMessageStore implements MessageStore {
     // 刷新消息队列service
     private final FlushConsumeQueueService flushConsumeQueueService;
 
+    // 删除commitLog的service (文件)
     private final CleanCommitLogService cleanCommitLogService;
 
+    // 删除consumeQueue的service (文件)
     private final CleanConsumeQueueService cleanConsumeQueueService;
 
+    // 索引的service
     private final IndexService indexService;
 
     private final AllocateMappedFileService allocateMappedFileService;
@@ -892,6 +895,7 @@ public class DefaultMessageStore implements MessageStore {
                 try {
 
                     boolean match = true;
+                    // 根据物理offset从文件还原message
                     MessageExt msg = this.lookMessageByOffset(offset);
                     if (0 == m) {
                         lastQueryMsgTime = msg.getStoreTimestamp();

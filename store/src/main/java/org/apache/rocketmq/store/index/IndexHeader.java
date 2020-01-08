@@ -55,6 +55,9 @@ public class IndexHeader {
         }
     }
 
+    /**
+     *  在固定的位置，放置各种属性值
+     */
     public void updateByteBuffer() {
         this.byteBuffer.putLong(beginTimestampIndex, this.beginTimestamp.get());
         this.byteBuffer.putLong(endTimestampIndex, this.endTimestamp.get());
