@@ -69,8 +69,8 @@ public class Producer {
                         ("Hello RocketMQ TagB" + i).getBytes(RemotingHelper.DEFAULT_CHARSET) /* Message body */
                 );
 
-                msg.putUserProperty("a","1");
-                msg1.putUserProperty("a","1");
+//                msg.putUserProperty("a","1");
+//                msg1.putUserProperty("a","1");
 
                 /*
                  * Call send message to deliver message to one of brokers.
