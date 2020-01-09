@@ -54,6 +54,7 @@ public class FilterAPI {
                     if (tag.length() > 0) {
                         String trimString = tag.trim();
                         if (trimString.length() > 0) {
+                            // 支持多tag "||"
                             subscriptionData.getTagsSet().add(trimString);
                             subscriptionData.getCodeSet().add(trimString.hashCode());
                         }

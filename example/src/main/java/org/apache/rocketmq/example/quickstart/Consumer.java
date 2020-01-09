@@ -17,6 +17,7 @@
 package org.apache.rocketmq.example.quickstart;
 
 import org.apache.rocketmq.client.consumer.DefaultMQPushConsumer;
+import org.apache.rocketmq.client.consumer.MessageSelector;
 import org.apache.rocketmq.client.consumer.listener.ConsumeConcurrentlyContext;
 import org.apache.rocketmq.client.consumer.listener.ConsumeConcurrentlyStatus;
 import org.apache.rocketmq.client.consumer.listener.MessageListenerConcurrently;
@@ -59,7 +60,8 @@ public class Consumer {
         /*
          * Subscribe one more more topics to consume.
          */
-        consumer.subscribe("TopicTest", "*");
+//        consumer.subscribe("TopicTest", "TagA || TagB");
+        consumer.subscribe("TopicTest", MessageSelector.bySql("a == 1"));
 
         /*
          *  Register callback to execute on arrival of messages fetched from brokers.
@@ -69,7 +71,7 @@ public class Consumer {
             @Override
             public ConsumeConcurrentlyStatus consumeMessage(List<MessageExt> msgs,
                 ConsumeConcurrentlyContext context) {
-                System.out.printf("%s Receive New Messages: %s %n", Thread.currentThread().getName(), msgs);
+                msgs.forEach(e-> System.out.println(new String(e.getBody())));
                 return ConsumeConcurrentlyStatus.CONSUME_SUCCESS;
             }
         });
