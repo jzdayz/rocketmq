@@ -16,8 +16,6 @@
  */
 package org.apache.rocketmq.acl.plain;
 
-import java.util.HashSet;
-import java.util.Set;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.commons.validator.routines.InetAddressValidator;
 import org.apache.rocketmq.acl.common.AclException;
@@ -25,6 +23,9 @@ import org.apache.rocketmq.acl.common.AclUtils;
 import org.apache.rocketmq.common.constant.LoggerName;
 import org.apache.rocketmq.logging.InternalLogger;
 import org.apache.rocketmq.logging.InternalLoggerFactory;
+
+import java.util.HashSet;
+import java.util.Set;
 
 public class RemoteAddressStrategyFactory {
 
@@ -39,9 +40,11 @@ public class RemoteAddressStrategyFactory {
     }
 
     public RemoteAddressStrategy getRemoteAddressStrategy(String remoteAddr) {
+        // 为空，则返回一个固定返回false的策略
         if (StringUtils.isBlank(remoteAddr)) {
             return BLANK_NET_ADDRESS_STRATEGY;
         }
+        // 所有的地址都返回true
         if ("*".equals(remoteAddr) || "*.*.*.*".equals(remoteAddr) || "*:*:*:*:*:*:*:*".equals(remoteAddr)) {
             return NULL_NET_ADDRESS_STRATEGY;
         }

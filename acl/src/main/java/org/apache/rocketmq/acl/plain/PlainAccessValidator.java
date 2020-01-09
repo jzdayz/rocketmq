@@ -16,10 +16,6 @@
  */
 package org.apache.rocketmq.acl.plain;
 
-import java.util.List;
-import java.util.Map;
-import java.util.SortedMap;
-import java.util.TreeMap;
 import org.apache.rocketmq.acl.AccessResource;
 import org.apache.rocketmq.acl.AccessValidator;
 import org.apache.rocketmq.acl.common.AclException;
@@ -37,6 +33,11 @@ import org.apache.rocketmq.common.protocol.heartbeat.ConsumerData;
 import org.apache.rocketmq.common.protocol.heartbeat.HeartbeatData;
 import org.apache.rocketmq.common.protocol.heartbeat.SubscriptionData;
 import org.apache.rocketmq.remoting.protocol.RemotingCommand;
+
+import java.util.List;
+import java.util.Map;
+import java.util.SortedMap;
+import java.util.TreeMap;
 
 import static org.apache.rocketmq.acl.plain.PlainAccessResource.getRetryTopic;
 
@@ -59,11 +60,13 @@ public class PlainAccessValidator implements AccessValidator {
 
         accessResource.setRequestCode(request.getCode());
 
+        // 这个等于null说明客户端没有使用授权模式，但是白名单还是可以用
         if (request.getExtFields() == null) {
             // If request's extFields is null,then return accessResource directly(users can use whiteAddress pattern)
             // The following logic codes depend on the request's extFields not to be null.
             return accessResource;
         }
+        // 各种验证信息
         accessResource.setAccessKey(request.getExtFields().get(SessionCredentials.ACCESS_KEY));
         accessResource.setSignature(request.getExtFields().get(SessionCredentials.SIGNATURE));
         accessResource.setSecretToken(request.getExtFields().get(SessionCredentials.SECURITY_TOKEN));
