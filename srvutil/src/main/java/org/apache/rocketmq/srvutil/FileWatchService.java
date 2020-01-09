@@ -17,6 +17,13 @@
 
 package org.apache.rocketmq.srvutil;
 
+import org.apache.commons.lang3.StringUtils;
+import org.apache.rocketmq.common.ServiceThread;
+import org.apache.rocketmq.common.UtilAll;
+import org.apache.rocketmq.common.constant.LoggerName;
+import org.apache.rocketmq.logging.InternalLogger;
+import org.apache.rocketmq.logging.InternalLoggerFactory;
+
 import java.io.File;
 import java.io.IOException;
 import java.nio.file.Files;
@@ -26,12 +33,6 @@ import java.security.MessageDigest;
 import java.security.NoSuchAlgorithmException;
 import java.util.ArrayList;
 import java.util.List;
-import org.apache.commons.lang3.StringUtils;
-import org.apache.rocketmq.common.ServiceThread;
-import org.apache.rocketmq.common.UtilAll;
-import org.apache.rocketmq.common.constant.LoggerName;
-import org.apache.rocketmq.logging.InternalLogger;
-import org.apache.rocketmq.logging.InternalLoggerFactory;
 
 public class FileWatchService extends ServiceThread {
     private static final InternalLogger log = InternalLoggerFactory.getLogger(LoggerName.COMMON_LOGGER_NAME);
@@ -77,6 +78,7 @@ public class FileWatchService extends ServiceThread {
                         log.warn(this.getServiceName() + " service has exception when calculate the file hash. ", ignored);
                         continue;
                     }
+                    // md5值不同，则发送change事件
                     if (!newHash.equals(fileCurrentHash.get(i))) {
                         fileCurrentHash.set(i, newHash);
                         listener.onChanged(watchFiles.get(i));
@@ -89,6 +91,9 @@ public class FileWatchService extends ServiceThread {
         log.info(this.getServiceName() + " service end");
     }
 
+    /**
+     *  读取文件内容生成MD5值
+     */
     private String hash(String filePath) throws IOException, NoSuchAlgorithmException {
         Path path = Paths.get(filePath);
         md.update(Files.readAllBytes(path));
