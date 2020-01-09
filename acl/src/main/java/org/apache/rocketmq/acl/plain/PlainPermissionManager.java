@@ -18,13 +18,6 @@ package org.apache.rocketmq.acl.plain;
 
 import com.alibaba.fastjson.JSONArray;
 import com.alibaba.fastjson.JSONObject;
-import java.io.File;
-import java.util.ArrayList;
-import java.util.HashMap;
-import java.util.Iterator;
-import java.util.LinkedHashMap;
-import java.util.List;
-import java.util.Map;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.rocketmq.acl.common.AclConstants;
 import org.apache.rocketmq.acl.common.AclException;
@@ -38,6 +31,9 @@ import org.apache.rocketmq.common.constant.LoggerName;
 import org.apache.rocketmq.logging.InternalLogger;
 import org.apache.rocketmq.logging.InternalLoggerFactory;
 import org.apache.rocketmq.srvutil.FileWatchService;
+
+import java.io.File;
+import java.util.*;
 
 public class PlainPermissionManager {
 
@@ -69,13 +65,14 @@ public class PlainPermissionManager {
 
         Map<String, PlainAccessResource> plainAccessResourceMap = new HashMap<>();
         List<RemoteAddressStrategy> globalWhiteRemoteAddressStrategy = new ArrayList<>();
-
+        // 读取配置文件
         JSONObject plainAclConfData = AclUtils.getYamlDataObject(fileHome + File.separator + fileName,
             JSONObject.class);
         if (plainAclConfData == null || plainAclConfData.isEmpty()) {
             throw new AclException(String.format("%s file  is not data", fileHome + File.separator + fileName));
         }
         log.info("Broker plain acl conf data is : ", plainAclConfData.toString());
+        // 全局的白名单
         JSONArray globalWhiteRemoteAddressesList = plainAclConfData.getJSONArray("globalWhiteRemoteAddresses");
         if (globalWhiteRemoteAddressesList != null && !globalWhiteRemoteAddressesList.isEmpty()) {
             for (int i = 0; i < globalWhiteRemoteAddressesList.size(); i++) {
@@ -293,6 +290,9 @@ public class PlainPermissionManager {
         return aclConfig;
     }
 
+    /**
+     *  文件变化监听，当配置文件变化的时候，重新载入
+     */
     private void watch() {
         try {
             String watchFilePath = fileHome + fileName;
