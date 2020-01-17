@@ -53,7 +53,7 @@ public class Producer {
          */
         producer.start();
 
-        for (int i = 0; i < 10; i++) {
+        for (int i = 0; i < 1; i++) {
             try {
 
                 /*
@@ -64,10 +64,10 @@ public class Producer {
                     ("Hello RocketMQ TagA" + i).getBytes(RemotingHelper.DEFAULT_CHARSET) /* Message body */
                 );
 
-                Message msg1 = new Message("TopicTest" /* Topic */,
-                        "TagB" /* Tag */,
-                        ("Hello RocketMQ TagB" + i).getBytes(RemotingHelper.DEFAULT_CHARSET) /* Message body */
-                );
+//                Message msg1 = new Message("TopicTest" /* Topic */,
+//                        "TagB" /* Tag */,
+//                        ("Hello RocketMQ TagB" + i).getBytes(RemotingHelper.DEFAULT_CHARSET) /* Message body */
+//                );
 
 //                msg.putUserProperty("a","1");
 //                msg1.putUserProperty("a","1");
@@ -75,7 +75,7 @@ public class Producer {
                 /*
                  * Call send message to deliver message to one of brokers.
                  */
-                SendResult sendResult = producer.send(Arrays.asList(msg,msg1));
+                SendResult sendResult = producer.send(Arrays.asList(msg));
 
                 System.out.printf("%s%n", sendResult);
             } catch (Exception e) {
