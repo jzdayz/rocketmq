@@ -298,6 +298,9 @@ public class DefaultMQPushConsumerImpl implements MQConsumerInner {
         final long beginTimestamp = System.currentTimeMillis();
 
         PullCallback pullCallback = new PullCallback() {
+            /**
+             *  这里面，拉取之后的处理逻辑，无论有没有找到对应消息，都会继续再拉取
+             */
             @Override
             public void onSuccess(PullResult pullResult) {
                 if (pullResult != null) {
