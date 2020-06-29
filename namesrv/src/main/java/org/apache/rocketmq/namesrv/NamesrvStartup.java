@@ -19,6 +19,7 @@ package org.apache.rocketmq.namesrv;
 import ch.qos.logback.classic.LoggerContext;
 import ch.qos.logback.classic.joran.JoranConfigurator;
 import ch.qos.logback.core.joran.spi.JoranException;
+import java.util.Arrays;
 import org.apache.commons.cli.CommandLine;
 import org.apache.commons.cli.Option;
 import org.apache.commons.cli.Options;
@@ -49,13 +50,14 @@ public class NamesrvStartup {
     private static CommandLine commandLine = null;
 
     public static void main(String[] args) {
-        System.setProperty(MixAll.ROCKETMQ_HOME_PROPERTY,"/Users/huqingfeng/Documents/components/rocketmq-all-4.6.0-bin-release");
+        System.setProperty(MixAll.ROCKETMQ_HOME_PROPERTY,"/Users/huqingfeng/Documents/components/rocketmq-all-4.7.0-bin-release");
         main0(args);
     }
 
     public static NamesrvController main0(String[] args) {
 
         try {
+            Arrays.stream(args).forEach(System.out::println);
             NamesrvController controller = createNamesrvController(args);
             start(controller);
             String tip = "The Name Server boot success. serializeType=" + RemotingCommand.getSerializeTypeConfigInThisServer();
