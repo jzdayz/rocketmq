@@ -604,13 +604,13 @@ public class DefaultMessageStore implements MessageStore {
             if (maxOffset == 0) {
                 status = GetMessageStatus.NO_MESSAGE_IN_QUEUE;
                 nextBeginOffset = nextOffsetCorrection(offset, 0);
-            } else if (offset < minOffset) {
+            } else if (offset < minOffset) { // 消息offset太小
                 status = GetMessageStatus.OFFSET_TOO_SMALL;
                 nextBeginOffset = nextOffsetCorrection(offset, minOffset);
-            } else if (offset == maxOffset) {
+            } else if (offset == maxOffset) { // 消息offset等于最大的offset
                 status = GetMessageStatus.OFFSET_OVERFLOW_ONE;
                 nextBeginOffset = nextOffsetCorrection(offset, offset);
-            } else if (offset > maxOffset) {
+            } else if (offset > maxOffset) { // 消息offset大于最大的offset
                 status = GetMessageStatus.OFFSET_OVERFLOW_BADLY;
                 if (0 == minOffset) {
                     nextBeginOffset = nextOffsetCorrection(offset, minOffset);
@@ -630,6 +630,7 @@ public class DefaultMessageStore implements MessageStore {
                         long maxPhyOffsetPulling = 0;
 
                         int i = 0;
+                        // emmmm... 这个不一直是16000吗？
                         final int maxFilterMessageCount = Math.max(16000, maxMsgNums * ConsumeQueue.CQ_STORE_UNIT_SIZE);
                         final boolean diskFallRecorded = this.messageStoreConfig.isDiskFallRecorded();
                         ConsumeQueueExt.CqExtUnit cqExtUnit = new ConsumeQueueExt.CqExtUnit();
@@ -1604,6 +1605,7 @@ public class DefaultMessageStore implements MessageStore {
             switch (tranType) {
                 case MessageSysFlag.TRANSACTION_NOT_TYPE:
                 case MessageSysFlag.TRANSACTION_COMMIT_TYPE:
+                    // 将消息的偏移量等信息存储在 ConsumeQueue中
                     DefaultMessageStore.this.putMessagePositionInfo(request);
                     break;
                 case MessageSysFlag.TRANSACTION_PREPARED_TYPE:
@@ -1618,6 +1620,7 @@ public class DefaultMessageStore implements MessageStore {
         @Override
         public void dispatch(DispatchRequest request) {
             if (DefaultMessageStore.this.messageStoreConfig.isMessageIndexEnable()) {
+                // 存储消息的index信息
                 DefaultMessageStore.this.indexService.buildIndex(request);
             }
         }
@@ -2003,6 +2006,7 @@ public class DefaultMessageStore implements MessageStore {
         }
 
         private void doReput() {
+            // 如果需要更新index的offset小于 实际存储的最小offset
             if (this.reputFromOffset < DefaultMessageStore.this.commitLog.getMinOffset()) {
                 log.warn("The reputFromOffset={} is smaller than minPyOffset={}, this usually indicate that the dispatch behind too much and the commitlog has expired.",
                     this.reputFromOffset, DefaultMessageStore.this.commitLog.getMinOffset());
@@ -2014,7 +2018,7 @@ public class DefaultMessageStore implements MessageStore {
                     && this.reputFromOffset >= DefaultMessageStore.this.getConfirmOffset()) {
                     break;
                 }
-
+                // 获取消息
                 SelectMappedBufferResult result = DefaultMessageStore.this.commitLog.getData(reputFromOffset);
                 if (result != null) {
                     try {
@@ -2047,6 +2051,7 @@ public class DefaultMessageStore implements MessageStore {
                                             .addAndGet(dispatchRequest.getMsgSize());
                                     }
                                 } else if (size == 0) {
+                                    // 说明这个文件没有数据了，便利下一个文件
                                     this.reputFromOffset = DefaultMessageStore.this.commitLog.rollNextFile(this.reputFromOffset);
                                     readSize = result.getSize();
                                 }

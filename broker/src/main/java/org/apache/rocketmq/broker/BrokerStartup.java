@@ -57,8 +57,7 @@ public class BrokerStartup {
     public static String brokerName = (System.getProperty("rocketmq.broker.name","broker1"));
 
     public static void main(String[] args) {
-        // /Users/huqingfeng/Documents/components/rocketmq-all-4.6.0-bin-release
-        System.setProperty(MixAll.ROCKETMQ_HOME_PROPERTY,"/Users/huqingfeng/Documents/components/rocketmq-all-4.7.0-bin-release");
+        System.setProperty(MixAll.ROCKETMQ_HOME_PROPERTY,"/Users/huqingfeng/Documents/rocketmq-all-4.7.1-bin-release");
         System.setProperty(MixAll.NAMESRV_ADDR_PROPERTY,"localhost:9876");
         System.setProperty("user.home","/Users/huqingfeng/Downloads/"+brokerName);
 

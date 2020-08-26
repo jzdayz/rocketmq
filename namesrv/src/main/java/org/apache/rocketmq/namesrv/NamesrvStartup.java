@@ -50,7 +50,7 @@ public class NamesrvStartup {
     private static CommandLine commandLine = null;
 
     public static void main(String[] args) {
-        System.setProperty(MixAll.ROCKETMQ_HOME_PROPERTY,"/Users/huqingfeng/Documents/components/rocketmq-all-4.7.0-bin-release");
+        System.setProperty(MixAll.ROCKETMQ_HOME_PROPERTY,"/Users/huqingfeng/Documents/rocketmq-all-4.7.1-bin-release");
         main0(args);
     }
 
