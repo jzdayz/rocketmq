@@ -143,6 +143,7 @@ public class BrokerStartup {
                     properties.load(in);
 
                     properties2SystemEnv(properties);
+                    // 对这些个配置，进行赋值覆盖
                     MixAll.properties2Object(properties, brokerConfig);
                     MixAll.properties2Object(properties, nettyServerConfig);
                     MixAll.properties2Object(properties, nettyClientConfig);
